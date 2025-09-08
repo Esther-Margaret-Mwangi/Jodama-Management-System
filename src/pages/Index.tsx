@@ -63,12 +63,7 @@ const Index = () => {
                 </span>
               </div>
             </div>
-            <StatsCards
-              totalHouses={3}
-              occupiedHouses={2}
-              totalEarnings={28450}
-              unpaidUnits={1}
-            />
+            <StatsCards />
           </div>
         );
 

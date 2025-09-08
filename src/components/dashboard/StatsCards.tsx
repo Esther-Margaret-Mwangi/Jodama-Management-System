@@ -1,3 +1,5 @@
+import { useEffect, useState } from "react";
+import { supabase } from "@/lib/supabaseClient";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -9,27 +11,69 @@ import {
   AlertCircle,
 } from "lucide-react";
 
-interface StatsCardsProps {
-  totalHouses: number;
-  occupiedHouses: number;
-  totalEarnings: number;
-  unpaidUnits: number;
-}
+const TOTAL_HOUSES = 8;
 
-const StatsCards = ({
-  totalHouses,
-  occupiedHouses,
-  totalEarnings,
-  unpaidUnits,
-}: StatsCardsProps) => {
-  const vacantHouses = totalHouses - occupiedHouses;
+const StatsCards = () => {
+  const [occupiedHouses, setOccupiedHouses] = useState(0);
+  const [monthlyEarnings, setMonthlyEarnings] = useState(0);
+  const [unpaidUnits, setUnpaidUnits] = useState(0);
+
+  useEffect(() => {
+    const fetchStats = async () => {
+      try {
+        // 1. Occupied Houses (tenants count)
+        const { count: tenantCount, error: tenantError } = await supabase
+          .from("tenants")
+          .select("id", { count: "exact", head: true });
+        if (tenantError) throw tenantError;
+        setOccupiedHouses(tenantCount || 0);
+
+        // 2. Monthly Earnings (sum of payments in current month)
+        const firstDay = new Date(
+          new Date().getFullYear(),
+          new Date().getMonth(),
+          1
+        );
+        const lastDay = new Date(
+          new Date().getFullYear(),
+          new Date().getMonth() + 1,
+          0
+        );
+
+        const { data: payments, error: paymentError } = await supabase
+          .from("payments")
+          .select("amount, created_at")
+          .gte("created_at", firstDay.toISOString())
+          .lte("created_at", lastDay.toISOString());
+        if (paymentError) throw paymentError;
+
+        const totalEarnings =
+          payments?.reduce((sum, p) => sum + (p.amount || 0), 0) || 0;
+        setMonthlyEarnings(totalEarnings);
+
+        // 3. Unpaid Rent (balance > 0 from balance table)
+        const { count: unpaidCount, error: balanceError } = await supabase
+          .from("balance")
+          .select("id", { count: "exact", head: true })
+          .gt("balance", 0);
+        if (balanceError) throw balanceError;
+        setUnpaidUnits(unpaidCount || 0);
+      } catch (err) {
+        console.error("Error fetching stats:", err);
+      }
+    };
+
+    fetchStats();
+  }, []);
+
+  const vacantHouses = TOTAL_HOUSES - occupiedHouses;
   const occupancyRate =
-    totalHouses > 0 ? Math.round((occupiedHouses / totalHouses) * 100) : 0;
+    TOTAL_HOUSES > 0 ? Math.round((occupiedHouses / TOTAL_HOUSES) * 100) : 0;
 
   const statsData = [
     {
       title: "Total Houses",
-      value: totalHouses,
+      value: TOTAL_HOUSES,
       icon: Home,
       description: `${occupiedHouses} occupied, ${vacantHouses} vacant`,
       gradient: "bg-gradient-primary",
@@ -40,14 +84,14 @@ const StatsCards = ({
       title: "Occupancy Rate",
       value: `${occupancyRate}%`,
       icon: Users,
-      description: `${occupiedHouses} of ${totalHouses} units`,
+      description: `${occupiedHouses} of ${TOTAL_HOUSES} units`,
       gradient: "bg-gradient-to-br from-success to-success/80",
       textColor: "text-success-foreground",
       trend: occupancyRate > 75 ? "up" : "down",
     },
     {
       title: "Monthly Earnings",
-      value: `KSh ${totalEarnings.toLocaleString()}`,
+      value: `KSh ${monthlyEarnings.toLocaleString()}`,
       icon: DollarSign,
       description: "Current month revenue",
       gradient: "bg-gradient-to-br from-chart-2 to-warning",
