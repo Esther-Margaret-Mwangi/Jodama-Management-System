@@ -18,9 +18,10 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
   SidebarHeader,
-  SidebarFooter,
   useSidebar,
 } from "@/components/ui/sidebar";
+import { supabase } from "@/lib/supabaseClient";
+import { useNavigate } from "react-router-dom";
 
 interface AppSidebarProps {
   currentView: string;
@@ -38,16 +39,17 @@ const navigation = [
 export function AppSidebar({ currentView, onViewChange }: AppSidebarProps) {
   const { state } = useSidebar();
   const { toast } = useToast();
-
-  const handleLogout = () => {
-    toast({
-      title: "Logout",
-      description:
-        "Logout functionality will be implemented with Supabase authentication.",
-    });
-  };
-
+  const navigate = useNavigate();
   const isCollapsed = state === "collapsed";
+
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    toast({
+      title: "Logged out",
+      description: "You have been successfully logged out.",
+    });
+    navigate("/login");
+  };
 
   return (
     <Sidebar collapsible="icon">
@@ -86,6 +88,16 @@ export function AppSidebar({ currentView, onViewChange }: AppSidebarProps) {
                   </SidebarMenuButton>
                 </SidebarMenuItem>
               ))}
+
+              <SidebarMenuItem>
+                <SidebarMenuButton
+                  onClick={handleLogout}
+                  className="w-full justify-start text-red-600 hover:bg-red-100"
+                >
+                  <LogOut className="h-4 w-4" />
+                  {!isCollapsed && <span>Logout</span>}
+                </SidebarMenuButton>
+              </SidebarMenuItem>
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
