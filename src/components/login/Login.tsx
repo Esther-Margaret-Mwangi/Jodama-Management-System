@@ -45,14 +45,14 @@ const Login = () => {
       localStorage.removeItem("rememberedEmail");
     }
 
-    const lastRoute = localStorage.getItem("lastRoute") || "/";
-    navigate(lastRoute);
+    // Always go to Dashboard after login
+    navigate("/");
   };
 
   return (
     <div
       className="flex items-center justify-center min-h-screen bg-cover bg-center"
-      style={{ backgroundImage: "url('/bg2.jpeg')" }} //background image
+      style={{ backgroundImage: "url('/bg2.jpeg')" }} // background image
     >
       <form
         onSubmit={handleLogin}
