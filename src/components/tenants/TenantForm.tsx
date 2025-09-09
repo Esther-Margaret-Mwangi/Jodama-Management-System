@@ -45,6 +45,7 @@ export function TenantForm({
     email: "",
   });
 
+  // Reset form when dialog opens/closes or when editing data changes
   useEffect(() => {
     if (initialData) {
       setFormData({
@@ -55,15 +56,19 @@ export function TenantForm({
         email: initialData.email,
       });
     } else {
-      setFormData({
-        house_no: "",
-        name: "",
-        phone: "",
-        national_id: "",
-        email: "",
-      });
+      resetForm();
     }
-  }, [initialData]);
+  }, [initialData, open]);
+
+  const resetForm = () => {
+    setFormData({
+      house_no: "",
+      name: "",
+      phone: "",
+      national_id: "",
+      email: "",
+    });
+  };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -71,7 +76,15 @@ export function TenantForm({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    onSubmit({ ...formData, id: initialData?.id });
+
+    // Exclude `id` on insert
+    if (initialData?.id) {
+      onSubmit({ ...formData, id: initialData.id });
+    } else {
+      onSubmit({ ...formData }); // no id for new tenant
+    }
+
+    resetForm();
     onClose();
   };
 
@@ -136,7 +149,14 @@ export function TenantForm({
             />
           </div>
           <DialogFooter>
-            <Button type="button" variant="outline" onClick={onClose}>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => {
+                resetForm();
+                onClose();
+              }}
+            >
               Cancel
             </Button>
             <Button type="submit">{initialData ? "Update" : "Add"}</Button>

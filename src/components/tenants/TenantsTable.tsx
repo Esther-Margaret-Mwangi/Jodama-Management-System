@@ -34,7 +34,7 @@ const TenantsTable: React.FC = () => {
   // Add or edit tenant
   const handleFormSubmit = async (tenant: Tenant) => {
     if (tenant.id) {
-      // update
+      // update existing tenant
       const { data, error } = await supabase
         .from("tenants")
         .update({
@@ -47,20 +47,33 @@ const TenantsTable: React.FC = () => {
         .eq("id", tenant.id)
         .select();
 
-      if (error) console.error("Error updating tenant:", error);
-      else if (data)
+      if (error) {
+        console.error("Error updating tenant:", error);
+      } else if (data) {
         setTenants((prev) =>
           prev.map((t) => (t.id === tenant.id ? data[0] : t))
         );
+      }
     } else {
-      // insert
+      // insert new tenant (don't send id)
       const { data, error } = await supabase
         .from("tenants")
-        .insert([tenant])
+        .insert([
+          {
+            house_no: tenant.house_no,
+            name: tenant.name,
+            phone: tenant.phone,
+            national_id: tenant.national_id,
+            email: tenant.email,
+          },
+        ])
         .select();
 
-      if (error) console.error("Error adding tenant:", error);
-      else if (data) setTenants([...tenants, ...data]);
+      if (error) {
+        console.error("Error adding tenant:", error);
+      } else if (data) {
+        setTenants([...tenants, ...data]);
+      }
     }
   };
 
