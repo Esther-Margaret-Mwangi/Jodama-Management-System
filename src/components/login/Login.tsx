@@ -45,7 +45,8 @@ const Login = () => {
       localStorage.removeItem("rememberedEmail");
     }
 
-    navigate("/");
+    const lastRoute = localStorage.getItem("lastRoute") || "/";
+    navigate(lastRoute);
   };
 
   return (

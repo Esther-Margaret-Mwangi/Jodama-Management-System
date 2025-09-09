@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/layout/AppSidebar";
@@ -12,36 +12,18 @@ const Index = () => {
   const [currentView, setCurrentView] = useState("dashboard");
   const { toast } = useToast();
 
-  const handleAddTenant = () => {
-    toast({
-      title: "Add Tenant",
-      description:
-        "This feature will be implemented with Supabase integration.",
-    });
-  };
+  //Load last view from localStorage on mount
+  useEffect(() => {
+    const savedView = localStorage.getItem("currentView");
+    if (savedView) {
+      setCurrentView(savedView);
+    }
+  }, []);
 
-  const handleEditTenant = (tenant: any) => {
-    toast({
-      title: "Edit Tenant",
-      description: `Editing ${tenant.name} - Feature coming with Supabase integration.`,
-    });
-  };
-
-  const handleDeleteTenant = (tenant: any) => {
-    toast({
-      title: "Delete Tenant",
-      description: `This will remove ${tenant.name} from the system.`,
-      variant: "destructive",
-    });
-  };
-
-  const handleGenerateReport = () => {
-    toast({
-      title: "Generate Report",
-      description:
-        "PDF report generation will be implemented with Supabase backend.",
-    });
-  };
+  //Save view to localStorage whenever it changes
+  useEffect(() => {
+    localStorage.setItem("currentView", currentView);
+  }, [currentView]);
 
   const renderCurrentView = () => {
     switch (currentView) {
@@ -127,6 +109,7 @@ const Index = () => {
                 {currentView === "tenants" && "Tenant Management"}
                 {currentView === "finance" && "Finance & Rent Management"}
                 {currentView === "balance" && "Balance & Arrears"}
+                {currentView === "wifi" && "WiFi Management"}
               </h1>
             </div>
           </header>

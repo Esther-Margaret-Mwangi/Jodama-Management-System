@@ -8,6 +8,7 @@ import { supabase } from "@/lib/supabaseClient";
 import Index from "./pages/Index.tsx";
 import NotFound from "./pages/NotFound.tsx";
 import Login from "@/components/login/Login.tsx";
+import RouteTracker from "@/components/layout/RouteTracker";
 
 const queryClient = new QueryClient();
 
@@ -53,6 +54,9 @@ const App = () => (
       <Toaster />
       <Sonner />
       <BrowserRouter>
+        {/* Tracks the last visited route */}
+        <RouteTracker />
+
         <Routes>
           {/*Protected Dashboard Route */}
           <Route
