@@ -16,11 +16,8 @@ export default function FinanceForm({
   onClose,
   onSave,
 }: FinanceFormProps) {
-  const [tenantInfo, setTenantInfo] = useState<{
-    house_no: string;
-    name: string;
-    phone?: string;
-  } | null>(null);
+  const [tenants, setTenants] = useState<any[]>([]);
+  const [selectedTenant, setSelectedTenant] = useState<any | null>(null);
 
   const [form, setForm] = useState({
     base_rent: 0,
@@ -31,6 +28,23 @@ export default function FinanceForm({
     month: new Date().toISOString().slice(0, 10),
   });
 
+  //Fetch tenants list for dropdown
+  useEffect(() => {
+    const fetchTenants = async () => {
+      const { data, error } = await supabase
+        .from("tenants")
+        .select("id, house_no, name, phone");
+
+      if (error) {
+        console.error("Error fetching tenants:", error);
+      } else {
+        setTenants(data || []);
+      }
+    };
+    fetchTenants();
+  }, []);
+
+  //Pre-fill form when editing
   useEffect(() => {
     if (payment) {
       setForm({
@@ -41,7 +55,8 @@ export default function FinanceForm({
         amount_paid: payment.amount_paid,
         month: payment.month || new Date().toISOString().slice(0, 10),
       });
-      setTenantInfo({
+      setSelectedTenant({
+        id: payment.tenant_id,
         house_no: payment.house_no,
         name: payment.tenant_name,
         phone: payment.phone,
@@ -53,11 +68,22 @@ export default function FinanceForm({
     setForm({ ...form, [e.target.name]: e.target.value });
   };
 
+  const handleTenantChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const tenantId = e.target.value;
+    const tenant = tenants.find((t) => t.id === tenantId) || null;
+    setSelectedTenant(tenant);
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
+    if (!selectedTenant) {
+      alert("Please select a tenant before saving.");
+      return;
+    }
+
     const payload = {
-      tenant_id: payment?.tenant_id,
+      tenant_id: selectedTenant.id,
       base_rent: Number(form.base_rent),
       garbage_fee: Number(form.garbage_fee),
       water_units: Number(form.water_units),
@@ -96,22 +122,40 @@ export default function FinanceForm({
             {payment ? "Edit Payment" : "Add Payment"}
           </h2>
           <form onSubmit={handleSubmit} className="space-y-4">
-            {tenantInfo && (
+            {/* Tenant Selection */}
+            <div>
+              <Label>Select Tenant (by House No)</Label>
+              <select
+                className="w-full border rounded-lg p-2"
+                value={selectedTenant?.id || ""}
+                onChange={handleTenantChange}
+                disabled={!!payment} // disable dropdown when editing
+              >
+                <option value="">-- Select Tenant --</option>
+                {tenants.map((t) => (
+                  <option key={t.id} value={t.id}>
+                    {t.house_no} - {t.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* Tenant Info Preview */}
+            {selectedTenant && (
               <div className="p-3 bg-gray-100 rounded">
                 <p>
-                  <strong>Tenant:</strong> {tenantInfo.name}
+                  <strong>Tenant:</strong> {selectedTenant.name}
                 </p>
                 <p>
-                  <strong>House No:</strong> {tenantInfo.house_no}
+                  <strong>House No:</strong> {selectedTenant.house_no}
                 </p>
-                {tenantInfo.phone && (
-                  <p>
-                    <strong>Phone:</strong> {tenantInfo.phone}
-                  </p>
-                )}
+                <p>
+                  <strong>Phone:</strong> {selectedTenant.phone}
+                </p>
               </div>
             )}
 
+            {/* Rent Details */}
             <div>
               <Label>Base Rent</Label>
               <Input
