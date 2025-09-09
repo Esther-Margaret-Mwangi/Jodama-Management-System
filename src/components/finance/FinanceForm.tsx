@@ -28,12 +28,12 @@ export default function FinanceForm({
     month: new Date().toISOString().slice(0, 10),
   });
 
-  //Fetch tenants list for dropdown
+  // Fetch tenants list
   useEffect(() => {
     const fetchTenants = async () => {
       const { data, error } = await supabase
         .from("tenants")
-        .select("id, house_no, name, phone");
+        .select("id, house_no, name, phone, has_wifi");
 
       if (error) {
         console.error("Error fetching tenants:", error);
@@ -44,7 +44,7 @@ export default function FinanceForm({
     fetchTenants();
   }, []);
 
-  //Pre-fill form when editing
+  // Pre-fill form when editing
   useEffect(() => {
     if (payment) {
       setForm({
@@ -60,6 +60,7 @@ export default function FinanceForm({
         house_no: payment.house_no,
         name: payment.tenant_name,
         phone: payment.phone,
+        has_wifi: payment.has_wifi,
       });
     }
   }, [payment]);
@@ -68,10 +69,18 @@ export default function FinanceForm({
     setForm({ ...form, [e.target.name]: e.target.value });
   };
 
+  //Auto-set WiFi fee based on tenant's has_wifi flag
   const handleTenantChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const tenantId = e.target.value;
     const tenant = tenants.find((t) => t.id === tenantId) || null;
     setSelectedTenant(tenant);
+
+    if (tenant) {
+      setForm((prev) => ({
+        ...prev,
+        wifi_fee: tenant.has_wifi ? 600 : 0, //Auto-fill based on tenant wifi status
+      }));
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -151,6 +160,10 @@ export default function FinanceForm({
                 </p>
                 <p>
                   <strong>Phone:</strong> {selectedTenant.phone}
+                </p>
+                <p>
+                  <strong>WiFi:</strong>{" "}
+                  {selectedTenant.has_wifi ? "Yes (600)" : "No (0)"}
                 </p>
               </div>
             )}
