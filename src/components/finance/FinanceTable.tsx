@@ -16,6 +16,8 @@ interface FinanceRecord {
   water_units: number;
   water_fee: number;
   wifi_fee: number;
+  standing_order: number;
+  arrears: number;
   total_rent: number;
   amount_paid: number;
   balance: number;
@@ -39,7 +41,7 @@ export function FinanceTable() {
     return "Paid";
   };
 
-  // ✅ Fetch payments data joined with tenants
+  //Fetch payments data joined with tenants
   const fetchRecords = async () => {
     const { data, error } = await supabase.from("payments").select(
       `
@@ -49,6 +51,8 @@ export function FinanceTable() {
         water_units,
         water_fee,
         wifi_fee,
+        standing_order,
+        arrears,
         total_due,
         amount_paid,
         balance,
@@ -76,6 +80,8 @@ export function FinanceTable() {
       water_units: row.water_units,
       water_fee: row.water_fee,
       wifi_fee: row.wifi_fee,
+      standing_order: row.standing_order,
+      arrears: row.arrears,
       total_rent: row.total_due,
       amount_paid: row.amount_paid,
       balance: row.balance,
@@ -85,7 +91,7 @@ export function FinanceTable() {
     setRecords(mapped);
   };
 
-  // ✅ Add or Update
+  //Add or Update
   const handleAddOrUpdate = async (record: FinanceRecord) => {
     const balance = record.total_rent - record.amount_paid;
     const status = calculateStatus(record.total_rent, record.amount_paid);
@@ -108,14 +114,14 @@ export function FinanceTable() {
     fetchRecords();
   };
 
-  // ✅ Delete record
+  //Delete record
   const handleDelete = async (id: string) => {
     const { error } = await supabase.from("payments").delete().eq("id", id);
     if (error) console.error("Error deleting payment:", error);
     fetchRecords();
   };
 
-  // ✅ Generate receipt
+  // Generate receipt
   const downloadReceipt = (record: FinanceRecord) => {
     const doc = new jsPDF();
 
@@ -129,6 +135,8 @@ export function FinanceTable() {
     doc.text(`Water Units: ${record.water_units}`, 20, 90);
     doc.text(`Water Fee: ${record.water_fee}`, 20, 100);
     doc.text(`Wifi Fee: ${record.wifi_fee}`, 20, 110);
+    doc.text(`Standing Order: ${record.standing_order}`, 20, 120);
+    doc.text(`Arrears: ${record.arrears}`, 20, 130);
     doc.text(`Total Rent: ${record.total_rent}`, 20, 130);
     doc.text(`Amount Paid: ${record.amount_paid}`, 20, 140);
     doc.text(`Balance: ${record.balance}`, 20, 150);
@@ -155,6 +163,8 @@ export function FinanceTable() {
               <th className="p-2 border">Water Units</th>
               <th className="p-2 border">Water Fee</th>
               <th className="p-2 border">Wifi Fee</th>
+              <th className="p-2 border">Standing Order</th>
+              <th className="p-2 border">Arrears</th>
               <th className="p-2 border">Total Rent</th>
               <th className="p-2 border">Amount Paid</th>
               <th className="p-2 border">Balance</th>
@@ -173,6 +183,8 @@ export function FinanceTable() {
                 <td className="p-2 border">{rec.water_units}</td>
                 <td className="p-2 border">{rec.water_fee}</td>
                 <td className="p-2 border">{rec.wifi_fee}</td>
+                <td className="p-2 border">{rec.standing_order}</td>
+                <td className="p-2 border">{rec.arrears}</td>
                 <td className="p-2 border">{rec.total_rent}</td>
                 <td className="p-2 border">{rec.amount_paid}</td>
                 <td className="p-2 border">{rec.balance}</td>
