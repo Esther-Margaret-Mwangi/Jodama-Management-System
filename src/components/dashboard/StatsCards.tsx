@@ -11,7 +11,7 @@ import {
   AlertCircle,
 } from "lucide-react";
 
-const TOTAL_HOUSES = 8;
+const TOTAL_HOUSES = 8; // change to dynamic if you want to derive from tenants
 
 const StatsCards = () => {
   const [occupiedHouses, setOccupiedHouses] = useState(0);
@@ -21,45 +21,50 @@ const StatsCards = () => {
   useEffect(() => {
     const fetchStats = async () => {
       try {
-        // 1. Occupied Houses (tenants count)
+        // 1) Occupied Houses: count tenants
         const { count: tenantCount, error: tenantError } = await supabase
           .from("tenants")
           .select("id", { count: "exact", head: true });
         if (tenantError) throw tenantError;
         setOccupiedHouses(tenantCount || 0);
 
-        // 2. Monthly Earnings (sum of payments in current month)
-        const firstDay = new Date(
-          new Date().getFullYear(),
-          new Date().getMonth(),
-          1
-        );
-        const lastDay = new Date(
-          new Date().getFullYear(),
-          new Date().getMonth() + 1,
-          0
-        );
+        // Build current-month date bounds (YYYY-MM-DD)
+        const now = new Date();
+        const firstDay = new Date(now.getFullYear(), now.getMonth(), 1);
+        const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+        const firstDayStr = firstDay.toISOString().slice(0, 10); // "YYYY-MM-DD"
+        const lastDayStr = lastDay.toISOString().slice(0, 10);
 
-        const { data: payments, error: paymentError } = await supabase
+        // 2) Monthly Earnings: sum of amount_paid for payments in current month
+        const { data: paymentsThisMonth, error: paymentsError } = await supabase
           .from("payments")
-          .select("amount, created_at")
-          .gte("created_at", firstDay.toISOString())
-          .lte("created_at", lastDay.toISOString());
-        if (paymentError) throw paymentError;
+          .select("amount_paid")
+          .gte("month", firstDayStr)
+          .lte("month", lastDayStr);
 
+        if (paymentsError) throw paymentsError;
+
+        // Postgres numeric is usually returned as string; parseFloat safely
         const totalEarnings =
-          payments?.reduce((sum, p) => sum + (p.amount || 0), 0) || 0;
+          paymentsThisMonth?.reduce(
+            (sum: number, p: any) =>
+              sum + (p?.amount_paid ? parseFloat(p.amount_paid) : 0),
+            0
+          ) || 0;
         setMonthlyEarnings(totalEarnings);
 
-        // 3. Unpaid Rent (balance > 0 from balance table)
-        const { count: unpaidCount, error: balanceError } = await supabase
-          .from("balance")
+        // 3) Unpaid Rent: count of payments for current month where balance > 0
+        const { count: unpaidCount, error: unpaidError } = await supabase
+          .from("payments")
           .select("id", { count: "exact", head: true })
+          .gte("month", firstDayStr)
+          .lte("month", lastDayStr)
           .gt("balance", 0);
-        if (balanceError) throw balanceError;
+
+        if (unpaidError) throw unpaidError;
         setUnpaidUnits(unpaidCount || 0);
-      } catch (err) {
-        console.error("Error fetching stats:", err);
+      } catch (err: any) {
+        console.error("Error fetching stats:", err.message ?? err);
       }
     };
 
@@ -93,16 +98,16 @@ const StatsCards = () => {
       title: "Monthly Earnings",
       value: `KSh ${monthlyEarnings.toLocaleString()}`,
       icon: DollarSign,
-      description: "Current month revenue",
+      description: "Total amount paid this month",
       gradient: "bg-gradient-to-br from-chart-2 to-warning",
       textColor: "text-warning-foreground",
-      trend: "up",
+      trend: monthlyEarnings > 0 ? "up" : null,
     },
     {
       title: "Unpaid Rent",
       value: unpaidUnits,
       icon: AlertCircle,
-      description: "Units with arrears",
+      description: "Clients with outstanding balance (current month)",
       gradient:
         unpaidUnits > 0
           ? "bg-gradient-to-br from-destructive to-destructive/80"
