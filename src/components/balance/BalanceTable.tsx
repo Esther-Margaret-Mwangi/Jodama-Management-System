@@ -12,6 +12,7 @@ interface BalanceRecord {
   tenant_name: string;
   phone: string;
   month: string;
+  arrears: number;
   balance: number;
   total_balance: number;
 }
@@ -28,6 +29,7 @@ export function BalanceTable() {
         id,
         tenant_id,
         month,
+        arrears,
         balance,
         total_balance,
         tenants (
@@ -50,6 +52,7 @@ export function BalanceTable() {
       tenant_name: row.tenants?.name || "",
       phone: row.tenants?.phone || "",
       month: row.month,
+      arrears: row.arrears,
       balance: row.balance,
       total_balance: row.total_balance,
     }));
@@ -74,6 +77,7 @@ export function BalanceTable() {
     doc.text(`House Number: ${record.house_no}`, 20, 50);
     doc.text(`Phone: ${record.phone}`, 20, 60);
     doc.text(`Month: ${record.month}`, 20, 80);
+    doc.text(`Arrears: ${record.arrears}`, 20, 130);
     doc.text(`Balance: ${record.balance}`, 20, 90);
     doc.text(`Total Balance: ${record.total_balance}`, 20, 110);
 
@@ -92,6 +96,7 @@ export function BalanceTable() {
               <th className="p-2 border">Tenant Name</th>
               <th className="p-2 border">Phone</th>
               <th className="p-2 border">Month</th>
+              <th className="p-2 border">Arrears</th>
               <th className="p-2 border">Balance</th>
               <th className="p-2 border">Total Balance</th>
               <th className="p-2 border">Actions</th>
@@ -104,6 +109,7 @@ export function BalanceTable() {
                 <td className="p-2 border">{rec.tenant_name}</td>
                 <td className="p-2 border">{rec.phone}</td>
                 <td className="p-2 border">{rec.month}</td>
+                <td className="p-2 border">{rec.arrears}</td>
                 <td className="p-2 border">{rec.balance}</td>
                 <td className="p-2 border">{rec.total_balance}</td>
                 <td className="p-2 border flex justify-center gap-2">
